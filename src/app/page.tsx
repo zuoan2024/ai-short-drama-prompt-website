@@ -1,65 +1,147 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+
+export default function HomePage() {
+  const [idea, setIdea] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
+  const [error, setError] = useState('');
+  const [projectId, setProjectId] = useState('');
+
+  const handleGenerate = async () => {
+    if (!idea.trim()) {
+      setError('请输入创意主题');
+      return;
+    }
+
+    setIsGenerating(true);
+    setError('');
+    setProgress(0);
+    setProgressMessage('正在准备...');
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idea }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '生成失败');
+      }
+
+      // 跳转到结果页面
+      setProjectId(data.data.id);
+      window.location.href = `/result/${data.data.id}`;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '生成失败，请重试');
+      setProgress(0);
+      setProgressMessage('');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+      <div className="container mx-auto px-4 py-16">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            🎬 AI 漫剧工具
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl text-gray-600">
+            输入一个创意主题，AI 自动生成小说、剧本、资产和提示词
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Main Content */}
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            {/* Input Area */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                你的创意主题
+              </label>
+              <textarea
+                value={idea}
+                onChange={(e) => setIdea(e.target.value)}
+                placeholder="例如：一个普通程序员突然获得了读心术，发现暗恋多年的女同事其实也喜欢他..."
+                className="w-full h-40 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                disabled={isGenerating}
+              />
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700">{error}</p>
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            {isGenerating && (
+              <div className="mb-6">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    {progressMessage}
+                  </span>
+                  <span className="text-sm text-gray-500">{progress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Generate Button */}
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || !idea.trim()}
+              className={`w-full py-4 px-6 rounded-lg font-semibold text-white transition-all ${
+                isGenerating || !idea.trim()
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl'
+              }`}
+            >
+              {isGenerating ? '🤖 正在生成中...' : '🚀 开始生成'}
+            </button>
+
+            {/* Features */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-4">
+                <div className="text-3xl mb-2">📖</div>
+                <div className="font-semibold text-gray-900">生成小说</div>
+                <div className="text-sm text-gray-600">AI 扩展成完整故事</div>
+              </div>
+              <div className="text-center p-4">
+                <div className="text-3xl mb-2">🎭</div>
+                <div className="font-semibold text-gray-900">改编剧本</div>
+                <div className="text-sm text-gray-600">标准短剧剧本格式</div>
+              </div>
+              <div className="text-center p-4">
+                <div className="text-3xl mb-2">🎨</div>
+                <div className="font-semibold text-gray-900">生成提示词</div>
+                <div className="text-sm text-gray-600">AI 绘画/视频提示词</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="mt-8 text-center text-sm text-gray-500">
+            <p>💡 提示：创意主题可以是一个想法、一句话、或者一个简单的故事梗概</p>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
