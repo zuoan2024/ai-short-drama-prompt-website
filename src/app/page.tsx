@@ -1,52 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
-  const [idea, setIdea] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [progressMessage, setProgressMessage] = useState('');
-  const [error, setError] = useState('');
-  const [projectId, setProjectId] = useState('');
+  const router = useRouter();
 
-  const handleGenerate = async () => {
-    if (!idea.trim()) {
-      setError('请输入创意主题');
-      return;
-    }
-
-    setIsGenerating(true);
-    setError('');
-    setProgress(0);
-    setProgressMessage('正在准备...');
-
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idea }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '生成失败');
-      }
-
-      // 跳转到结果页面
-      setProjectId(data.data.id);
-      window.location.href = `/result/${data.data.id}`;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成失败，请重试');
-      setProgress(0);
-      setProgressMessage('');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  const routes = [
+    {
+      id: 'idea',
+      title: '📝 从灵感开始',
+      description: '有一个创意想法，让 AI 帮你扩展成完整故事',
+      route: '/start-from-idea',
+      color: 'from-purple-500 to-pink-500',
+    },
+    {
+      id: 'novel',
+      title: '📖 从小说开始',
+      description: '已有小说内容，需要改编成剧本',
+      route: '/start-from-novel',
+      color: 'from-blue-500 to-cyan-500',
+    },
+    {
+      id: 'script',
+      title: '🎭 从剧本开始',
+      description: '已有剧本，需要提取资产或生成提示词',
+      route: '/start-from-script',
+      color: 'from-green-500 to-teal-500',
+    },
+    {
+      id: 'assets',
+      title: '🔍 只提取资产',
+      description: '从剧本中提取人物、场景、道具',
+      route: '/extract-assets',
+      color: 'from-orange-500 to-red-500',
+    },
+    {
+      id: 'image',
+      title: '🎨 生图提示词',
+      description: '从剧本生成 AI 绘画提示词',
+      route: '/generate-image-prompts',
+      color: 'from-pink-500 to-rose-500',
+    },
+    {
+      id: 'video',
+      title: '🎬 生视频提示词',
+      description: '从剧本生成 AI 视频提示词',
+      route: '/generate-video-prompts',
+      color: 'from-indigo-500 to-purple-500',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
@@ -57,89 +59,51 @@ export default function HomePage() {
             🎬 AI 漫剧工具
           </h1>
           <p className="text-xl text-gray-600">
-            输入一个创意主题，AI 自动生成小说、剧本、资产和提示词
+            选择你的起点，开始创作之旅
           </p>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            {/* Input Area */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                你的创意主题
-              </label>
-              <textarea
-                value={idea}
-                onChange={(e) => setIdea(e.target.value)}
-                placeholder="例如：一个普通程序员突然获得了读心术，发现暗恋多年的女同事其实也喜欢他..."
-                className="w-full h-40 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                disabled={isGenerating}
-              />
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700">{error}</p>
-              </div>
-            )}
-
-            {/* Progress Bar */}
-            {isGenerating && (
-              <div className="mb-6">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    {progressMessage}
-                  </span>
-                  <span className="text-sm text-gray-500">{progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Generate Button */}
+        {/* Route Cards */}
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {routes.map((route) => (
             <button
-              onClick={handleGenerate}
-              disabled={isGenerating || !idea.trim()}
-              className={`w-full py-4 px-6 rounded-lg font-semibold text-white transition-all ${
-                isGenerating || !idea.trim()
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl'
-              }`}
+              key={route.id}
+              onClick={() => router.push(route.route)}
+              className="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 text-left"
             >
-              {isGenerating ? '🤖 正在生成中...' : '🚀 开始生成'}
+              <div className={`absolute inset-0 bg-gradient-to-br ${route.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+              <div className="relative">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  {route.title}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  {route.description}
+                </p>
+                <div className="flex items-center text-sm font-semibold text-gray-700 group-hover:text-gray-900">
+                  <span>开始使用</span>
+                  <svg
+                    className="w-4 h-4 ml-2 group-hover:translate-x-2 transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              </div>
             </button>
+          ))}
+        </div>
 
-            {/* Features */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4">
-                <div className="text-3xl mb-2">📖</div>
-                <div className="font-semibold text-gray-900">生成小说</div>
-                <div className="text-sm text-gray-600">AI 扩展成完整故事</div>
-              </div>
-              <div className="text-center p-4">
-                <div className="text-3xl mb-2">🎭</div>
-                <div className="font-semibold text-gray-900">改编剧本</div>
-                <div className="text-sm text-gray-600">标准短剧剧本格式</div>
-              </div>
-              <div className="text-center p-4">
-                <div className="text-3xl mb-2">🎨</div>
-                <div className="font-semibold text-gray-900">生成提示词</div>
-                <div className="text-sm text-gray-600">AI 绘画/视频提示词</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Info */}
-          <div className="mt-8 text-center text-sm text-gray-500">
-            <p>💡 提示：创意主题可以是一个想法、一句话、或者一个简单的故事梗概</p>
-          </div>
+        {/* Info */}
+        <div className="mt-16 text-center text-sm text-gray-500">
+          <p className="mb-2">💡 提示：你可以从任意环节开始，不需要按顺序完成所有步骤</p>
+          <p>💾 所有数据保存在浏览器本地，不会上传到服务器</p>
         </div>
       </div>
     </div>
